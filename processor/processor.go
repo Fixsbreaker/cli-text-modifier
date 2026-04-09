@@ -59,6 +59,9 @@ func Process(text string) string {
 	reSpaceAfterPunct := regexp.MustCompile(`([.,!?:;]+)([^ .,!?:;])`)
 	resultText = reSpaceAfterPunct.ReplaceAllString(resultText, "$1 $2")
 
+	reQuotes := regexp.MustCompile(`'\s*(.*?)\s*'`)
+	resultText = reQuotes.ReplaceAllString(resultText, "'$1'")
+
 	return resultText
 }
 
