@@ -10,24 +10,41 @@ func Process(text string) string {
 	words := strings.Fields(text)
 	var processed []string
 
-	for _, word := range words {
+	for i := 0; i < len(words); i++ {
+		word := words[i]
+
 		switch word {
 		case "(hex)":
 			applyHex(&processed)
 		case "(bin)":
 			applyBin(&processed)
 		case "(up)":
-			if len(processed) > 0 {
-				processed[len(processed)-1] = strings.ToUpper(processed[len(processed)-1])
-			}
+			applyCase(&processed, strings.ToUpper, 1)
 		case "(low)":
-			if len(processed) > 0 {
-				processed[len(processed)-1] = strings.ToLower(processed[len(processed)-1])
-			}
+			applyCase(&processed, strings.ToLower, 1)
 		case "(cap)":
-			if len(processed) > 0 {
-				processed[len(processed)-1] = capitalize(processed[len(processed)-1])
+			applyCase(&processed, capitalize, 1)
+		case "(up,", "(low,", "(cap,":
+			if i+1 < len(words) {
+				numStr := words[i+1]
+				if strings.HasSuffix(numStr, ")") {
+					numStr = strings.TrimSuffix(numStr, ")")
+					n, err := strconv.Atoi(numStr)
+					if err == nil {
+						switch word {
+						case "(up,":
+							applyCase(&processed, strings.ToUpper, n)
+						case "(low,":
+							applyCase(&processed, strings.ToLower, n)
+						case "(cap,":
+							applyCase(&processed, capitalize, n)
+						}
+						i++ // skip next word(num)
+						continue
+					}
+				}
 			}
+			processed = append(processed, word)
 		default:
 			processed = append(processed, word)
 		}
@@ -53,6 +70,16 @@ func applyBin(words *[]string) {
 	last := len(*words) - 1
 	if val, err := strconv.ParseInt((*words)[last], 2, 64); err == nil {
 		(*words)[last] = strconv.FormatInt(val, 10)
+	}
+}
+
+func applyCase(words *[]string, transform func(string) string, n int) {
+	start := len(*words) - n
+	if start < 0 {
+		start = 0 // protect from going out of the bounds
+	}
+	for i := start; i < len(*words); i++ {
+		(*words)[i] = transform((*words)[i])
 	}
 }
 
