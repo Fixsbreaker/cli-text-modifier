@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -50,7 +51,15 @@ func Process(text string) string {
 		}
 	}
 
-	return strings.Join(processed, " ")
+	resultText := strings.Join(processed, " ")
+
+	reSpaceBeforePunct := regexp.MustCompile(`\s+([.,!?:;]+)`)
+	resultText = reSpaceBeforePunct.ReplaceAllString(resultText, "$1")
+
+	reSpaceAfterPunct := regexp.MustCompile(`([.,!?:;]+)([^ .,!?:;])`)
+	resultText = reSpaceAfterPunct.ReplaceAllString(resultText, "$1 $2")
+
+	return resultText
 }
 
 func applyHex(words *[]string) {
