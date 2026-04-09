@@ -62,29 +62,51 @@ func Process(text string) string {
 	reQuotes := regexp.MustCompile(`'\s*(.*?)\s*'`)
 	resultText = reQuotes.ReplaceAllString(resultText, "'$1'")
 
-	return resultText
+	words = strings.Fields(resultText) // fix indefinite articles (a to an) before vowels
+	for i := 0; i < len(words)-1; i++ {
+		w := words[i]
+		if w == "a" || w == "A" {
+			nextWord := words[i+1]
+			cleanNext := strings.TrimLeft(nextWord, "'\"") // protection of
+			if len(cleanNext) > 0 {
+				firstChar := strings.ToLower(string([]rune(cleanNext)[0]))
+				if strings.ContainsAny(firstChar, "aeiouh") {
+					if w == "a" {
+						words[i] = "an"
+					} else {
+						words[i] = "An"
+					}
+				}
+			}
+		}
+	}
+
+	return strings.Join(words, " ")
 }
 
-func applyHex(words *[]string) {
+func applyHex(words *[]string) { // converts previous hex word to decimal
 	if len(*words) == 0 {
 		return
 	}
-	last := len(*words) - 1
-	if val, err := strconv.ParseInt((*words)[last], 16, 64); err == nil {
-		(*words)[last] = strconv.FormatInt(val, 10)
+	lastIdx := len(*words) - 1
+	lastWord := (*words)[lastIdx]
+	if val, err := strconv.ParseInt(lastWord, 16, 64); err == nil {
+		(*words)[lastIdx] = strconv.FormatInt(val, 10)
 	}
 }
 
-func applyBin(words *[]string) {
+func applyBin(words *[]string) { //converts previous binary word to decimal
 	if len(*words) == 0 {
 		return
 	}
-	last := len(*words) - 1
-	if val, err := strconv.ParseInt((*words)[last], 2, 64); err == nil {
-		(*words)[last] = strconv.FormatInt(val, 10)
+	lastIdx := len(*words) - 1
+	lastWord := (*words)[lastIdx]
+	if val, err := strconv.ParseInt(lastWord, 2, 64); err == nil {
+		(*words)[lastIdx] = strconv.FormatInt(val, 10)
 	}
 }
 
+// applies a given text transformation to the last N words
 func applyCase(words *[]string, transform func(string) string, n int) {
 	start := len(*words) - n
 	if start < 0 {
